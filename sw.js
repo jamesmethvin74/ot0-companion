@@ -1,4 +1,4 @@
-const CACHE_NAME = "ot0-companion-v1";
+const CACHE_NAME = "ot0-companion-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
