@@ -372,7 +372,7 @@ footer { padding: 20px 15px 36px; color: var(--muted); text-align: center; font-
   <div class="hero-row">
     <div class="brand">
       <h1>OT0 Companion</h1>
-      <p>Alpha 6.2 · Serpent's Burrow area patch</p>
+      <p>Alpha 6.3 · Enemy name search fix</p>
     </div>
     <div class="stat-strip">
       <span class="stat">386 enemies</span>
@@ -382,7 +382,7 @@ footer { padding: 20px 15px 36px; color: var(--muted); text-align: center; font-
   </div>
   <div class="search-wrap">
     <span>⌕</span>
-    <input id="globalSearch" type="search" autocomplete="off" placeholder="Search enemies…">
+    <input id="globalSearch" type="search" autocomplete="off" placeholder="Search enemy names…">
     <button id="clearSearch" class="clear-search" aria-label="Clear search">✕</button>
   </div>
 </header>
@@ -498,7 +498,7 @@ const DATA = {"enemies":[{"id":"Aggressive Ant|Theatropolis Plains","name":"Aggr
 
   const search = $("globalSearch");
   const viewNames = {
-    enemies: "Search enemies, areas, or weaknesses…",
+    enemies: "Search enemy names…",
     bosses: "Search bosses, quests, groups, or tips…",
     party: "Search characters or jobs…",
     areas: "Search areas or enemies found there…",
@@ -587,8 +587,8 @@ const DATA = {"enemies":[{"id":"Aggressive Ant|Theatropolis Plains","name":"Aggr
     const weakness = $("enemyWeakFilter").value;
     const area = $("enemyAreaFilter").value;
     const rows = DATA.enemies.filter((e) => {
-      const haystack = [e.name, e.area, ...(e.weaknesses || [])].join(" ").toLowerCase();
-      return (!term || haystack.includes(term))
+      const enemyName = e.name.toLowerCase();
+      return (!term || enemyName.includes(term))
         && (eliteMode === "all" || (eliteMode === "elite" && e.elite) || (eliteMode === "normal" && !e.elite))
         && (!weakness || e.weaknesses.includes(weakness))
         && (!area || e.area === area);
