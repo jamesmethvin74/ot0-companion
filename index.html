@@ -857,6 +857,91 @@ footer{
   }
 }
 
+
+.spoiler-panel{
+  margin-bottom:14px;
+  border-color:rgba(217,169,95,.55);
+}
+.spoiler-panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+}
+.spoiler-title{
+  font-weight:900;
+  color:var(--gold-strong);
+  font-size:1.02rem;
+  margin-bottom:3px;
+}
+.spoiler-progress-label{
+  display:block;
+  margin:0 0 7px;
+  color:#cbd6e4;
+  font-size:.82rem;
+  font-weight:800;
+}
+#spoilerProgress{
+  width:100%;
+}
+.spoiler-hidden-note{
+  margin-top:9px;
+  color:var(--muted);
+  font-size:.78rem;
+  line-height:1.4;
+}
+.spoiler-switch{
+  position:relative;
+  width:54px;
+  height:30px;
+  flex:0 0 54px;
+}
+.spoiler-switch input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.spoiler-slider{
+  position:absolute;
+  inset:0;
+  cursor:pointer;
+  border-radius:999px;
+  background:#273348;
+  border:1px solid #4a5c76;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.35);
+  transition:.18s ease;
+}
+.spoiler-slider::before{
+  content:"";
+  position:absolute;
+  width:22px;
+  height:22px;
+  left:3px;
+  top:3px;
+  border-radius:50%;
+  background:#b8c4d4;
+  box-shadow:0 2px 5px rgba(0,0,0,.45);
+  transition:.18s ease;
+}
+.spoiler-switch input:checked + .spoiler-slider{
+  background:linear-gradient(180deg,#397c58,#28553e);
+  border-color:#70c893;
+}
+.spoiler-switch input:checked + .spoiler-slider::before{
+  transform:translateX(24px);
+  background:#e7fff0;
+}
+.spoiler-warning-card{
+  padding:16px;
+  border:1px dashed rgba(217,169,95,.55);
+  border-radius:12px;
+  background:rgba(54,45,28,.28);
+  color:#d6c7aa;
+  text-align:center;
+  line-height:1.45;
+}
+
 </style>
 </head>
 <body>
@@ -865,7 +950,7 @@ footer{
   <div class="hero-row">
     <div class="brand">
       <h1>OT0 Companion</h1>
-      <p>Alpha 7.3 · Missing enemy audit patch</p>
+      <p>Alpha 7.4 · Spoiler protection</p>
     </div>
     <div class="stat-strip">
       <span class="stat">386 enemies</span>
@@ -909,6 +994,27 @@ footer{
 </section>
 
 <section id="bosses" class="view">
+  <div class="spoiler-panel panel">
+    <div class="spoiler-panel-head">
+      <div>
+        <div class="spoiler-title">Spoiler Protection</div>
+        <div id="spoilerStatusText" class="count">ON - Story bosses are limited to your progress</div>
+      </div>
+      <label class="spoiler-switch">
+        <input id="spoilerProtection" type="checkbox" checked>
+        <span class="spoiler-slider"></span>
+      </label>
+    </div>
+    <label class="spoiler-progress-label" for="spoilerProgress">How far are you?</label>
+    <select id="spoilerProgress">
+      <option value="0">Just starting - hide all story bosses</option>
+      <option value="1">Finished the three Master routes</option>
+      <option value="2">Finished Master of All</option>
+      <option value="3">Finished the three Bestower routes</option>
+      <option value="4">Finished Bestower of All</option>
+    </select>
+    <div id="spoilerHiddenCount" class="spoiler-hidden-note"></div>
+  </div>
   <div class="toolbar panel">
     <select id="bossSectionFilter"><option value="">All story groups</option><option value="Bestower of All">Bestower of All</option><option value="Bestower of Fame">Bestower of Fame</option><option value="Bestower of Power">Bestower of Power</option><option value="Bestower of Wealth">Bestower of Wealth</option><option value="Elite Enemies">Elite Enemies</option><option value="Finale: The Rings Sealed Away">Finale: The Rings Sealed Away</option><option value="Kindlers of the Flame">Kindlers of the Flame</option><option value="Master of All">Master of All</option><option value="Master of Fame">Master of Fame</option><option value="Master of Power">Master of Power</option><option value="Master of Wealth">Master of Wealth</option><option value="Other Bosses">Other Bosses</option></select>
     <select id="bossWeakFilter"><option value="">Any weakness</option><option value="Sword">Sword</option><option value="Spear">Spear</option><option value="Dagger">Dagger</option><option value="Axe">Axe</option><option value="Bow">Bow</option><option value="Staff">Staff</option><option value="Tome">Tome</option><option value="Fan">Fan</option><option value="Fire">Fire</option><option value="Ice">Ice</option><option value="Lightning">Lightning</option><option value="Wind">Wind</option><option value="Light">Light</option><option value="Dark">Dark</option></select>
@@ -1024,7 +1130,9 @@ const WALKTHROUGH=[{"group":"Prologue","chapter":"Ch. 0","title":"Prologue","sta
     selectedParty: new Set(),
     favorites: new Set(JSON.parse(localStorage.getItem("ot0_favorites") || "[]")),
     walkDone: new Set(JSON.parse(localStorage.getItem("ot0_walk_done") || "[]")),
-    openWalkChapters: new Set()
+    openWalkChapters: new Set(),
+    spoilerProtection: localStorage.getItem("ot0_spoiler_protection") !== "off",
+    spoilerProgress: Number(localStorage.getItem("ot0_spoiler_progress") || "0")
   };
 
   const search = $("globalSearch");
@@ -1129,17 +1237,62 @@ const WALKTHROUGH=[{"group":"Prologue","chapter":"Ch. 0","title":"Prologue","sta
     $("enemyList").innerHTML = rows.length ? rows.map(enemyCard).join("") : '<div class="empty">No matching enemies.</div>';
   }
 
+
+  const SPOILER_SECTION_LEVEL = {
+    "Elite Enemies": 0,
+    "Kindlers of the Flame": 1,
+    "Master of Wealth": 1,
+    "Master of Power": 1,
+    "Master of Fame": 1,
+    "Finale: The Rings Sealed Away": 1,
+    "Master of All": 2,
+    "Bestower of Wealth": 3,
+    "Bestower of Power": 3,
+    "Bestower of Fame": 3,
+    "Bestower of All": 4,
+    "Other Bosses": 4
+  };
+
+  function bossIsSpoilerSafe(boss) {
+    if (!state.spoilerProtection) return true;
+    const requiredLevel = SPOILER_SECTION_LEVEL[boss.section] ?? 4;
+    return requiredLevel <= state.spoilerProgress;
+  }
+
+  function saveSpoilerSettings() {
+    localStorage.setItem("ot0_spoiler_protection", state.spoilerProtection ? "on" : "off");
+    localStorage.setItem("ot0_spoiler_progress", String(state.spoilerProgress));
+  }
+
+  function syncSpoilerControls() {
+    $("spoilerProtection").checked = state.spoilerProtection;
+    $("spoilerProgress").value = String(state.spoilerProgress);
+    $("spoilerProgress").disabled = !state.spoilerProtection;
+    $("spoilerStatusText").textContent = state.spoilerProtection
+      ? "ON - Story bosses are limited to your progress"
+      : "OFF - Every boss name and strategy is visible";
+  }
+
   function renderBosses() {
     const term = search.value.trim().toLowerCase();
     const section = $("bossSectionFilter").value;
     const weakness = $("bossWeakFilter").value;
-    const rows = DATA.bosses.filter((b) => {
+
+    const visibleBosses = DATA.bosses.filter(bossIsSpoilerSafe);
+    const hiddenCount = DATA.bosses.length - visibleBosses.length;
+
+    const rows = visibleBosses.filter((b) => {
       const haystack = [b.name, b.section, b.encounter, ...(b.weaknesses || []), ...(b.tips || [])].join(" ").toLowerCase();
       return (!term || haystack.includes(term))
         && (!section || b.section === section)
         && (!weakness || b.weaknesses.includes(weakness));
     });
-    $("bossCount").textContent = `${rows.length} of ${DATA.bosses.length} boss/elite entries`;
+
+    $("bossCount").textContent = `${rows.length} visible boss/elite entries`;
+    $("spoilerHiddenCount").textContent = state.spoilerProtection
+      ? `${hiddenCount} later-story entries are hidden. They cannot appear in search results.`
+      : "Spoiler protection is disabled.";
+
     let output = "";
     let previousSection = "";
     rows.forEach((b) => {
@@ -1149,7 +1302,12 @@ const WALKTHROUGH=[{"group":"Prologue","chapter":"Ch. 0","title":"Prologue","sta
       }
       output += bossCard(b);
     });
-    $("bossList").innerHTML = output || '<div class="empty">No matching bosses.</div>';
+
+    $("bossList").innerHTML = output || (
+      state.spoilerProtection && hiddenCount
+        ? '<div class="spoiler-warning-card">No visible bosses match these filters. Increase your story progress only when you are ready for later boss names.</div>'
+        : '<div class="empty">No matching bosses.</div>'
+    );
   }
 
   function renderAreas() {
@@ -1537,6 +1695,17 @@ const WALKTHROUGH=[{"group":"Prologue","chapter":"Ch. 0","title":"Prologue","sta
   $("eliteFilter").addEventListener("change", renderEnemies);
   $("enemyWeakFilter").addEventListener("change", renderEnemies);
   $("enemyAreaFilter").addEventListener("change", renderEnemies);
+  $("spoilerProtection").addEventListener("change", (event) => {
+    state.spoilerProtection = event.target.checked;
+    saveSpoilerSettings();
+    syncSpoilerControls();
+    renderBosses();
+  });
+  $("spoilerProgress").addEventListener("change", (event) => {
+    state.spoilerProgress = Number(event.target.value);
+    saveSpoilerSettings();
+    renderBosses();
+  });
   $("bossSectionFilter").addEventListener("change", renderBosses);
   $("bossWeakFilter").addEventListener("change", renderBosses);
   $("characterGroupFilter").addEventListener("change", renderParty);
@@ -1578,6 +1747,7 @@ const WALKTHROUGH=[{"group":"Prologue","chapter":"Ch. 0","title":"Prologue","sta
 
   fillBossTargetOptions();
   fillWalkFilters();
+  syncSpoilerControls();
   renderEnemies();
   renderBosses();
   renderParty();
