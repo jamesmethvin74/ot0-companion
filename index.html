@@ -300,6 +300,21 @@ button.weakness:hover { border-color: var(--gold); background: #29384b; }
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow);
 }
+.party-selection-summary {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.sticky-party-count {
+  color: var(--gold-strong);
+  font-weight: 850;
+  font-size: .94rem;
+  margin-bottom: 3px;
+}
+#selectedNames {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .primary-btn {
   border: 1px solid var(--gold);
   background: linear-gradient(180deg, var(--gold-strong), var(--gold));
@@ -372,7 +387,7 @@ footer { padding: 20px 15px 36px; color: var(--muted); text-align: center; font-
   <div class="hero-row">
     <div class="brand">
       <h1>OT0 Companion</h1>
-      <p>Alpha 6.3 · Enemy name search fix</p>
+      <p>Alpha 6.4 · Sticky party count</p>
     </div>
     <div class="stat-strip">
       <span class="stat">386 enemies</span>
@@ -451,7 +466,10 @@ footer { padding: 20px 15px 36px; color: var(--muted); text-align: center; font-
   <div class="section-head"><h2>Choose Characters</h2><div id="partyCount" class="count">0 of 8 selected</div></div>
   <div id="characterGrid" class="character-grid"></div>
   <div class="party-actions">
-    <div id="selectedNames" class="count">No characters selected</div>
+    <div class="party-selection-summary">
+      <div id="stickyPartyCount" class="sticky-party-count">0 of 8 selected</div>
+      <div id="selectedNames" class="count">No characters selected</div>
+    </div>
     <button id="analyzeParty" class="primary-btn">Analyze Party</button>
   </div>
   <div id="partyResults" class="party-results"></div>
@@ -682,7 +700,9 @@ const DATA = {"enemies":[{"id":"Aggressive Ant|Theatropolis Plains","name":"Aggr
   function renderParty() {
     const group = $("characterGroupFilter").value;
     const rows = DATA.characters.filter(c => (!group || c.group === group) && characterMatchesSearch(c));
-    $("partyCount").textContent = `${state.selectedParty.size} of 8 selected`;
+    const selectionCountText = `${state.selectedParty.size} of 8 selected`;
+    $("partyCount").textContent = selectionCountText;
+    $("stickyPartyCount").textContent = selectionCountText;
     $("protagonistJobBox").hidden = !state.selectedParty.has("Protagonist");
     const selected = DATA.characters.filter(c => state.selectedParty.has(c.name)).map(c => c.name);
     $("selectedNames").textContent = selected.length ? selected.join(", ") : "No characters selected";
